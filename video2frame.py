@@ -2,17 +2,14 @@ import cv2
 import os
 
 def extract_frames(video_path, output_folder, frame_rate=1):
-    # Check if output folder exists, if not, create it
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
-    # Capture video
     vidcap = cv2.VideoCapture(video_path)
     if not vidcap.isOpened():
         print("Error: Could not open video.")
         return
     
-    # Get video properties
     total_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = vidcap.get(cv2.CAP_PROP_FPS)
     print(f"Total frames: {total_frames}, FPS: {fps}")
