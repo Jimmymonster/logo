@@ -7,7 +7,6 @@ labels_path  = os.path.join(data_path, 'labels')
 output_path  = 'cropped_images'
 
 os.makedirs(output_path, exist_ok=True)
-
 def crop_image(image, labels):
     h, w, _ = image.shape
     cropped_images = []
@@ -19,12 +18,12 @@ def crop_image(image, labels):
         y_center *= h
         bbox_width *= w
         bbox_height *= h
-        x1 = int(x_center - bbox_width / 2)
-        y1 = int(y_center - bbox_height / 2)
-        x2 = int(x_center + bbox_width / 2)
-        y2 = int(y_center + bbox_height / 2)
+        x1 = max(int(x_center - bbox_width / 2), 0)
+        y1 = max(int(y_center - bbox_height / 2), 0)
+        x2 = min(int(x_center + bbox_width / 2), w)
+        y2 = min(int(y_center + bbox_height / 2), h)
         cropped_image = image[y1:y2, x1:x2]
-    cropped_images.append((cls, cropped_image))
+        cropped_images.append((cls, cropped_image))
 
     return cropped_images
 
