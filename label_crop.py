@@ -30,10 +30,15 @@ def crop_image(image, labels):
 
 
 for image_name in os.listdir(images_path):
-    if image_name.endswith('.jpg'):
+    if image_name.endswith('.jpg') or image_name.endswith('.jpeg') or image_name.endswith('.png'):
         image_path = os.path.join(images_path, image_name)
         image = cv2.imread(image_path)
-        label_file_name = image_name.replace('.jpg', '.txt')
+        if image_name.endswith('.jpg'):
+            label_file_name = image_name.replace('.jpg', '.txt')
+        elif image_name.endswith('.jpeg'):
+            label_file_name = image_name.replace('.jpeg', '.txt')
+        elif image_name.endswith('.png'):
+            label_file_name = image_name.replace('.png', '.txt')
         label_path = os.path.join(labels_path, label_file_name)
         
         if os.path.exists(label_path):
