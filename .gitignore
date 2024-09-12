@@ -2,6 +2,7 @@ aia
 all
 all_old
 augmentinput
+background
 frame
 frameinput
 video
@@ -9,3 +10,6 @@ output_video.mp4
 output_video.avi
 cropdata
 cropped_images
+logo
+logo-train
+l_dataset

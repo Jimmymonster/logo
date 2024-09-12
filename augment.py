@@ -3,6 +3,21 @@ import numpy as np
 import random
 import os
 
+def get_max_image_dimensions(folder_path):
+    """Get the maximum width and height of all images in the folder."""
+    max_width = 0
+    max_height = 0
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+            image_path = os.path.join(folder_path, filename)
+            image = cv2.imread(image_path)
+            h, w, _ = image.shape
+            if w > max_width:
+                max_width = w
+            if h > max_height:
+                max_height = h
+    return max_width, max_height
+
 def rotate_image(image, angle):
     """Rotate the image by a given angle."""
     (h, w) = image.shape[:2]
@@ -92,24 +107,48 @@ def add_gaussian_noise(image):
     noisy = np.clip(noisy, 0, 255)  # Ensure pixel values are within [0, 255]
     return noisy.astype(np.uint8), "_gaussian_noise"
 
+def place_image_on_background(image, background_folder):
+    """Place the image onto a random background at a random position."""
+    background_filename = random.choice(os.listdir(background_folder))
+    background_path = os.path.join(background_folder, background_filename)
+    background = cv2.imread(background_path)
+    
+    bg_h, bg_w, _ = background.shape
+    img_h, img_w, _ = image.shape
 
-def augment_and_save_image(image, original_filename, save_folder):
+    if img_h > bg_h or img_w > bg_w:
+        #raise ValueError("The image is larger than the background.")
+        return image
+
+    # Random position for the image within the background
+    x_offset = random.randint(0, bg_w - img_w)
+    y_offset = random.randint(0, bg_h - img_h)
+
+    # Place the image on the background
+    combined = background.copy()
+    combined[y_offset:y_offset + img_h, x_offset:x_offset + img_w] = image
+
+    return combined
+
+def augment_and_save_image(image, original_filename, save_folder, background_folder):
     """Apply various augmentations to an image and save each version."""
     augmented_images = []
 
-    # Rotate
-    angle = random.uniform(-80,-30)
-    rotated_image, suffix = rotate_image(image, angle)
-    rotated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(rotated_filename, rotated_image)
-    augmented_images.append(rotated_filename)
+    image = place_image_on_background(image, background_folder)
 
-    # Rotate
-    angle = random.uniform(30, 80)
-    rotated_image, suffix = rotate_image(image, angle)
-    rotated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + "_2" + os.path.splitext(original_filename)[1] )
-    cv2.imwrite(rotated_filename, rotated_image)
-    augmented_images.append(rotated_filename)
+    # # Rotate
+    # angle = random.uniform(-50,-30)
+    # rotated_image, suffix = rotate_image(image, angle)
+    # rotated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(rotated_filename, rotated_image)
+    # augmented_images.append(rotated_filename)
+
+    # # Rotate
+    # angle = random.uniform(30, 50)
+    # rotated_image, suffix = rotate_image(image, angle)
+    # rotated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + "_2" + os.path.splitext(original_filename)[1] )
+    # cv2.imwrite(rotated_filename, rotated_image)
+    # augmented_images.append(rotated_filename)
 
     # Flip
     flipped_image, suffix = flip_image(image)
@@ -117,20 +156,20 @@ def augment_and_save_image(image, original_filename, save_folder):
     cv2.imwrite(flipped_filename, flipped_image)
     augmented_images.append(flipped_filename)
 
-    # Scale
-    scale_factor = random.uniform(0.8, 1.2)
-    scaled_image, suffix = scale_image(image, scale_factor)
-    scaled_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(scaled_filename, scaled_image)
-    augmented_images.append(scaled_filename)
+    # # Scale
+    # scale_factor = random.uniform(0.8, 1.2)
+    # scaled_image, suffix = scale_image(image, scale_factor)
+    # scaled_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(scaled_filename, scaled_image)
+    # augmented_images.append(scaled_filename)
 
-    # Translate
-    x = random.uniform(-0.1, 0.1) * image.shape[1]
-    y = random.uniform(-0.1, 0.1) * image.shape[0]
-    translated_image, suffix = translate_image(image, x, y)
-    translated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(translated_filename, translated_image)
-    augmented_images.append(translated_filename)
+    # # Translate
+    # x = random.uniform(-0.1, 0.1) * image.shape[1]
+    # y = random.uniform(-0.1, 0.1) * image.shape[0]
+    # translated_image, suffix = translate_image(image, x, y)
+    # translated_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(translated_filename, translated_image)
+    # augmented_images.append(translated_filename)
 
     # Adjust brightness and contrast
     alpha = random.uniform(0.8, 1.2)
@@ -146,23 +185,23 @@ def augment_and_save_image(image, original_filename, save_folder):
     cv2.imwrite(blurred_filename, blurred_image)
     augmented_images.append(blurred_filename)
 
-    # Salt and pepper noise
-    noisy_image, suffix = add_salt_pepper_noise(image, 0.05)
-    noisy_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(noisy_filename, noisy_image)
-    augmented_images.append(noisy_filename)
+    # # Salt and pepper noise
+    # noisy_image, suffix = add_salt_pepper_noise(image, 0.05)
+    # noisy_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(noisy_filename, noisy_image)
+    # augmented_images.append(noisy_filename)
 
     # Hue shift
-    hue_shifted_image, suffix = hue_shift_image(image)
-    hue_shifted_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(hue_shifted_filename, hue_shifted_image)
-    augmented_images.append(hue_shifted_filename)
+    # hue_shifted_image, suffix = hue_shift_image(image)
+    # hue_shifted_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(hue_shifted_filename, hue_shifted_image)
+    # augmented_images.append(hue_shifted_filename)
 
-    # Crop
-    cropped_image, suffix = crop_image(image)
-    cropped_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(cropped_filename, cropped_image)
-    augmented_images.append(cropped_filename)
+    # # Crop
+    # cropped_image, suffix = crop_image(image)
+    # cropped_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(cropped_filename, cropped_image)
+    # augmented_images.append(cropped_filename)
 
     # Sharpen
     sharpened_image, suffix = sharpen_image(image)
@@ -171,22 +210,30 @@ def augment_and_save_image(image, original_filename, save_folder):
     augmented_images.append(sharpened_filename)
 
     # Gaussian noise
-    gaussian_noisy_image, suffix = add_gaussian_noise(image)
-    gaussian_noisy_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
-    cv2.imwrite(gaussian_noisy_filename, gaussian_noisy_image)
-    augmented_images.append(gaussian_noisy_filename)
+    # gaussian_noisy_image, suffix = add_gaussian_noise(image)
+    # gaussian_noisy_filename = os.path.join(save_folder, os.path.splitext(original_filename)[0] + suffix + os.path.splitext(original_filename)[1])
+    # cv2.imwrite(gaussian_noisy_filename, gaussian_noisy_image)
+    # augmented_images.append(gaussian_noisy_filename)
 
     return augmented_images
 
-def augment_images_in_folder(folder_path):
+def augment_images_in_folder(folder_path, background_folder):
     """Apply augmentations to all images in a folder and save the augmented images."""
+    background_files = os.listdir(background_folder)
+    max_width, max_height = get_max_image_dimensions(folder_path)
+    if len(background_files) < len(os.listdir(folder_path)*5):
+            for i in range(len(os.listdir(folder_path))*5 - len(background_files)):
+                random_bg = cv2.randn(np.zeros((max_height+100, max_width+100, 3), np.uint8), (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), (50, 50, 50))
+                random_bg_filename = f"background_{i}.jpg"
+                cv2.imwrite(os.path.join(background_folder, random_bg_filename), random_bg)
+            background_files = os.listdir(background_folder)
     for filename in os.listdir(folder_path):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
             image_path = os.path.join(folder_path, filename)
             image = cv2.imread(image_path)
 
             save_folder = folder_path  # Save augmented images in the same folder
-            augmented_image_paths = augment_and_save_image(image, filename, save_folder)
+            augmented_image_paths = augment_and_save_image(image, filename, save_folder, background_folder)
 
             print(f"Augmented and saved images for {filename}:")
             for img_path in augmented_image_paths:
@@ -194,4 +241,7 @@ def augment_images_in_folder(folder_path):
 
 # Example usage
 folder_path = 'augmentinput'
-augment_images_in_folder(folder_path)
+# folder_path = 'background'
+background_folder = 'background'
+augment_images_in_folder(folder_path, background_folder)
+

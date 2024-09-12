@@ -1,11 +1,19 @@
 import os
 import cv2
+import shutil
 
-data_path = 'cropdata'
+# data_path = 'C:/Users/thanapob/Downloads/news1'
+# data_path = 'C:/Users/thanapob/My File/logo-gen_upgraded/output'
+# data_path = "C:/Users/thanapob/Downloads/Yorlok"
+# data_path = 'C:/Users/thanapob/My File/auto_label&whiteout_yolo/output'
+data_path = "C:/Users/thanapob/Downloads/Logo_catagory-20240912T052127Z-001/Logo_catagory/logo-train/logo-train"
+
 images_path  = os.path.join(data_path, 'images')
 labels_path  = os.path.join(data_path, 'labels')
 output_path  = 'cropped_images'
 
+if os.path.exists(output_path):
+    shutil.rmtree(output_path)
 os.makedirs(output_path, exist_ok=True)
 def crop_image(image, labels):
     h, w, _ = image.shape
